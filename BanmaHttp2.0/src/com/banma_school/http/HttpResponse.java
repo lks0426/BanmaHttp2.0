@@ -6,6 +6,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -16,7 +18,11 @@ import org.apache.log4j.Logger;
 import com.banma_school.http.server.BanmaA;
 import com.banma_school.http.server.BanmaB;
 import com.banma_school.http.server.BanmaC;
+import com.banma_school.http.server.BanmaD;
+import com.banma_school.http.server.BanmaE;
+import com.banma_school.http.server.BanmaF;
 import com.banma_school.http.server.IServer;
+import com.banma_school.http.server.IServer2;
 
 public class HttpResponse {
 
@@ -28,23 +34,32 @@ public class HttpResponse {
 	
 	private static Map<String, IServer> urlMap;
 	
+	private static Map<String, IServer2> urlMap2;
+	
 	static {
-		//”≥…‰ url ∏˙æﬂÃÂµƒ java¿‡
+		//”≥ÔøΩÔøΩ url ÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩÔøΩ javaÔøΩÔøΩ
 		urlMap = new HashMap<String, IServer>();
 		urlMap.put("/banma.a", new BanmaA());
 		urlMap.put("/banma.b", new BanmaB());
 		urlMap.put("/sanjiao", new BanmaC());
+		urlMap.put("/changfangxing", new BanmaD());
 		
+		urlMap2 = new HashMap<String, IServer2>();
+		urlMap2.put("/changfangxingE", new BanmaE());
+		urlMap2.put("/abcF", new BanmaF());
 	}
+	
 
 
 	public HttpResponse(HttpRequest req) throws IOException {
-
+		String repsonseString = null;
 		try {
 			
 			HttpHeader header = req.getHeader();
 	
 			Method method = header.getMethod();
+			
+			System.out.println("ÂΩìÂâçÂ∑•‰ΩúÁõÆÂΩïÔºö" + System.getProperty("user.dir"));
 			
 			switch (method) {
 				case HEAD:
@@ -52,7 +67,24 @@ public class HttpResponse {
 					break;
 				case POST:
 					fillHeaders(Status._200);
-					fillResponse(req.getBodyText());
+					
+
+					Map<String, String> formData = req.parseFormBody();
+					if (formData.get("size") != null) {
+
+						setContentType(header.getPath(), headers);
+
+						if("/submit".equals(header.getPath())) {
+							IServer2 iServer2 = new BanmaF();
+							repsonseString = iServer2.execute(formData);
+						}
+					} else {
+						System.out.println("keyÈîôËØØ");
+						break;
+					}
+
+					fillResponse(repsonseString);
+					
 					break;
 				case GET:
 				
@@ -63,32 +95,50 @@ public class HttpResponse {
 						///banma.b?sss=123&zzz=321
 						String[] pathArrString = pathString.split("\\?");
 						
-						if(urlMap.containsKey(pathArrString[0])) {
+						if(urlMap.containsKey(pathArrString[0])|| urlMap2.containsKey(pathArrString[0])) {
 							
 							 fillHeaders(Status._200);
 							 setContentType(pathString, headers);
 							 String[][] psStrings = null;
-							 IServer iServer = urlMap.get(pathArrString[0]);
-							 if(pathArrString.length == 2) {
-								 String[] parameter = pathArrString[1].split("&");
-								 psStrings = new String[parameter.length][2];
-										 
-								 for (int i = 0; i < parameter.length; i++) {
-									 String[] parString = parameter[i].split("=");//0-> key 1 -> value  sss=123
-									 psStrings[i] = parString;
-								 }
-								
-							 }
-							 
-							 String repsonseString =  iServer.execute(psStrings);
-							 
-							 fillResponse(repsonseString);
+
+							    // changfangxingE
+								repsonseString = null;
+
+								if (urlMap2.get("/changfangxingE") != null) {
+									IServer2 iServer2 =  urlMap2.get(pathArrString[0]);
+							        Map<String, String> queryPairs = new HashMap<>();
+							        String[] pairs = pathArrString[1].split("&");
+							        
+							        for (String pair : pairs) {
+							            int idx = pair.indexOf("=");
+							            String key = URLDecoder.decode(pair.substring(0, idx), "UTF-8");
+							            String value = URLDecoder.decode(pair.substring(idx + 1), "UTF-8");
+							            queryPairs.put(key, value);
+							        }
+									
+									repsonseString = iServer2.execute(queryPairs);
+								} else {
+									 IServer iServer = urlMap.get(pathArrString[0]);
+									 if(pathArrString.length == 2) {
+										 String[] parameter = pathArrString[1].split("&");
+										 psStrings = new String[parameter.length][2];
+												 
+										 for (int i = 0; i < parameter.length; i++) {
+											 String[] parString = parameter[i].split("=");//0-> key 1 -> value  sss=123
+											 psStrings[i] = parString;
+										 }
+										
+									 }
+									repsonseString = iServer.execute(psStrings);
+								}
+
+								fillResponse(repsonseString);
 							 
 							 break;
 							 
 						}
 						
-						File file = new File("htdoc", pathString);
+						File file = new File("BanmaHttp2.0\\htdoc", pathString);
 						if (file.isDirectory()) {
 						    fillHeaders(Status._200);
 						    
@@ -132,6 +182,7 @@ public class HttpResponse {
 		}
 
 	}
+	
 
 	private byte[] getBytes(File file) throws IOException {
 		int length = (int) file.length();

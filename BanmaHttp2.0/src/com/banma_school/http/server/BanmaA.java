@@ -1,13 +1,13 @@
 package com.banma_school.http.server;
 /**
- * 1.定义一个类
- * 2.给这个类做url映射
+ * 1.锟斤拷锟斤拷一锟斤拷锟斤拷
+ * 2.锟斤拷锟斤拷锟斤拷锟斤拷锟絬rl映锟斤拷
  * @author banma
  *
  */
 public class BanmaA implements IServer{
 	public String execute(String[][] pStrings) {
-		String string = "一对一教学";
+		String string = "11";
 		
 		if(pStrings == null) {
 			return string;
